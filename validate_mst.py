@@ -49,18 +49,30 @@ def kruskal_mst(num_nodes: int, edges: List[Tuple[int,int,float]]):
     total = sum(w for (_,_,w) in mst)
     return mst, total
 
-def read_mst_file(path: str):
+def read_mst_file(filename):
+    """Read MST from output file, skipping header lines."""
     edges = []
-    with open(path, 'r') as fh:
-        for line in fh:
+    with open(filename, 'r') as f:
+        for line in f:
             line = line.strip()
-            if not line or line.startswith('u') or line.startswith('Total'):
+            if not line or line.startswith('=') or line.startswith('-') or 'MST' in line or 'Edge List' in line or 'Total' in line or 'Number' in line or 'K-Machines' in line or 'Input Size' in line:
                 continue
-            parts = line.split()
-            if len(parts) >= 3:
-                u = int(parts[0]); v = int(parts[1]); w = float(parts[2])
-                edges.append((u,v,w))
-    return edges, sum(w for (_,_,w) in edges)
+            if '->' in line:  # Sequential format: "u -> v: w"
+                parts = line.replace('->', ' ').replace(':', ' ').split()
+                if len(parts) >= 3:
+                    u, v, w = int(parts[0]), int(parts[1]), float(parts[2])
+                    edges.append((u, v, w))
+            else:  # Distributed format: "u v w"
+                parts = line.split()
+                if len(parts) >= 3:
+                    try:
+                        u, v, w = int(parts[0]), int(parts[1]), float(parts[2])
+                        edges.append((u, v, w))
+                    except ValueError:
+                        continue  # Skip non-edge lines
+    
+    total_weight = sum(w for u, v, w in edges)
+    return edges, total_weight
 
 def main():
     if len(sys.argv) < 4:

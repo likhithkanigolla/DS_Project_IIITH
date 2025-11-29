@@ -50,8 +50,8 @@ def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str):
     if os.path.exists(mpi_metrics) and os.path.exists(km_metrics):
         mpi_time = read_metric(mpi_metrics, 'total_time')
         km_time = read_metric(km_metrics, 'total_time')
-        mpi_rounds = read_metric(mpi_metrics, 'rounds')
-        km_rounds = read_metric(km_metrics, 'rounds')
+        mpi_rounds = read_metric(mpi_metrics, 'comm_rounds')
+        km_rounds = read_metric(km_metrics, 'comm_rounds')
         
         with open(comparison_file, 'w') as f:
             f.write("MST Algorithm Platform Comparison\n")
