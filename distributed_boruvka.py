@@ -176,7 +176,7 @@ def run_kmachine_boruvka(num_nodes: int, edges: List[Tuple[int, int, float]], ou
                     "k_machines": size,
                     "coordination": "decentralized"
                 }
-                f.write(json.dumps(obj) + "\\n")
+                f.write(json.dumps(obj) + "\n")
         
         print(f"[k-machine] Complete: {len(unique)} edges, weight {total_w:.6f}")
         print(f"[k-machine] Decentralized execution on {size} machines")

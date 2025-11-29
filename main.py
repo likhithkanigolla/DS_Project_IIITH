@@ -221,33 +221,77 @@ def main():
     comparison_file = os.path.join(results_dir, 'platform_comparison.txt')
     write_comparison(mpi_dir, kmachine_dir, comparison_file, verification)
     
-    # Step 7: Generate animations (if requested)
+    # Step 7: Generate animations and charts (if requested)
     if args.animate:
-        print("\n🎬 Generating animations...")
+        print("\n🎬 Generating visualizations...")
         try:
-            # Load K-Machine iteration data for animation
             import json
             kmachine_log = os.path.join(kmachine_dir, 'iteration_log.jsonl')
+            
             if os.path.exists(kmachine_log):
                 snapshots = []
+                component_counts = []  # NEW: Track convergence
+                mst_sizes = []        # NEW: Track MST growth
+                
                 with open(kmachine_log, 'r') as f:
                     for line in f:
-                        json.loads(line.strip())  # validate format
-                        # Reconstruct snapshot (simplified)
-                        snapshots.append([])  # Would need actual edge data
+                        if line.strip():
+                            try:
+                                data = json.loads(line.strip())
+                                snapshots.append(data.get('unions', []))
+                                if 'components' in data:
+                                    component_counts.append(data['components'])
+                                if 'mst_size' in data:
+                                    mst_sizes.append(data['mst_size'])
+                            except json.JSONDecodeError as e:
+                                continue  # Skip malformed lines
+            else:
+                snapshots = []
+                component_counts = []
+                mst_sizes = []
+
+            # 1. Generate Growth/Convergence Chart (NEW)
+            print("   📊 Generating convergence chart...")
+            if component_counts and mst_sizes:
+                chart_path = save_growth_chart(component_counts, mst_sizes, kmachine_dir)
+                if chart_path:
+                    print(f"   ✅ Convergence chart saved: {chart_path}")
+            else:
+                print("   ⚠️  No convergence data available")
+
+            # 2. Generate Animation (Existing)
+            print("   🎥 Generating MST animation...")
+            if snapshots:
+                # Convert union data to weighted edge format for animation
+                edge_weights = {(min(u, v), max(u, v)): w for u, v, w in edges}
+                weighted_snapshots = []
+                for unions in snapshots:
+                    weighted_edges = []
+                    for u, v in unions:
+                        key = (min(u, v), max(u, v))
+                        if key in edge_weights:
+                            weighted_edges.append((u, v, edge_weights[key]))
+                    weighted_snapshots.append(weighted_edges)
                 
-                # Generate frames and GIF
                 frames_dir = os.path.join(kmachine_dir, 'frames')
-                save_animation(num_nodes, edges, snapshots, frames_dir, 
+                save_animation(num_nodes, edges, weighted_snapshots, frames_dir, 
                              title='K-Machine Borůvka', size=args.ranks)
                 
                 gif_path = os.path.join(kmachine_dir, 'mst_animation.gif')
                 frame_files = [os.path.join(frames_dir, f"frame_{i:03d}.png") 
                               for i in range(1, len(snapshots)+1)]
-                build_gif(frame_files, gif_path, duration=2.0)
-                print(f"🎥 Animation: {gif_path}")
+                actual_frames = [f for f in frame_files if os.path.exists(f)]
+                if actual_frames:
+                    build_gif(actual_frames, gif_path, duration=2.0)
+                    print(f"   ✅ Animation saved: {gif_path}")
+                else:
+                    print("   ⚠️  No animation frames found")
+            else:
+                print("   ⚠️  No snapshot data available")
         except Exception as e:
             print(f"⚠️  Animation failed: {e}")
+            import traceback
+            traceback.print_exc()
     
     # Step 7: Summary
     print("\\n" + "=" * 60)

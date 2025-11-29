@@ -211,7 +211,13 @@ def save_animation(num_nodes: int,
     prev_set = set()
     for idx in indices:
         mst_edges = iteration_snapshots[idx]
-        current_set = {tuple(sorted((u, v))) for (u, v, w) in mst_edges}
+        # Handle both formats: [(u,v,w)] and [[u,v]]
+        if mst_edges and len(mst_edges[0]) == 3:
+            # Format: [(u, v, w)]
+            current_set = {tuple(sorted((u, v))) for (u, v, w) in mst_edges}
+        else:
+            # Format: [[u, v]] or [(u, v)]
+            current_set = {tuple(sorted(edge)) for edge in mst_edges}
         new_set = current_set - prev_set if highlight_new else current_set
         # Redraw with differentiation
         ax.clear()
