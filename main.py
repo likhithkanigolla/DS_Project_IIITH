@@ -35,7 +35,11 @@ def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str):
             with open(path, 'r') as f:
                 for line in f:
                     if line.startswith(f"{key}:"):
-                        return line.split(':', 1)[1].strip()
+                        value = line.split(':', 1)[1].strip()
+                        # Remove 'seconds' suffix if present
+                        if value.endswith(' seconds'):
+                            value = value.replace(' seconds', '')
+                        return value
         except Exception:
             return None
         return None
@@ -51,17 +55,27 @@ def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str):
         
         with open(comparison_file, 'w') as f:
             f.write("MST Algorithm Platform Comparison\n")
-            f.write("=" * 40 + "\n")
-            f.write(f"Plain MPI total_time: {mpi_time}\n")
-            f.write(f"K-Machine total_time: {km_time}\n")
-            f.write(f"Plain MPI rounds: {mpi_rounds}\n")
-            f.write(f"K-Machine rounds: {km_rounds}\n")
+            f.write("=" * 50 + "\n\n")
+            f.write("PERFORMANCE METRICS\n")
+            f.write("-" * 20 + "\n")
+            f.write(f"Sequential Borůvka total_time: {float(mpi_time):.6f} seconds\n")
+            f.write(f"Distributed Borůvka total_time: {float(km_time):.6f} seconds\n")
+            f.write(f"Sequential Borůvka rounds: {mpi_rounds if mpi_rounds else 'N/A'}\n")
+            f.write(f"Distributed Borůvka rounds: {km_rounds if km_rounds else 'N/A'}\n\n")
             
             # Speed ratio
             try:
                 if mpi_time and km_time:
                     ratio = float(km_time) / float(mpi_time)
-                    f.write(f"Speed ratio (K-Machine/MPI): {ratio:.3f}\n")
+                    f.write("PERFORMANCE ANALYSIS\n")
+                    f.write("-" * 20 + "\n")
+                    f.write(f"Speed ratio (Distributed/Sequential): {ratio:.3f}x\n")
+                    if ratio > 1:
+                        f.write(f"Sequential is {ratio:.1f}x faster than Distributed\n")
+                    else:
+                        f.write(f"Distributed is {1/ratio:.1f}x faster than Sequential\n")
+            except (ValueError, TypeError, ZeroDivisionError):
+                pass
             except ValueError:
                 pass
         
@@ -77,7 +91,7 @@ def main():
     args = p.parse_args()
     
     print("=" * 60)
-    print("🌲 MST ANALYSIS: Plain MPI vs K-Machine Borůvka")
+    print("🌲 MST ANALYSIS: Sequential vs Distributed Borůvka")
     print("=" * 60)
     
     # Step 1: Generate graph
@@ -94,21 +108,21 @@ def main():
     save_graph_file(num_nodes, edges, graph_file)
     print(f"📁 Graph saved: {graph_file}")
     
-    mpi_dir = os.path.join(results_dir, 'plain_mpi')
-    kmachine_dir = os.path.join(results_dir, 'kmachine')
+    mpi_dir = os.path.join(results_dir, 'sequential')
+    kmachine_dir = os.path.join(results_dir, 'distributed')
     
-    # Step 3: Run Plain MPI
-    print("\n🖥️  Running Plain MPI...")
+    # Step 3: Run Sequential Borůvka
+    print("\n🖥️  Running Sequential Borůvka...")
     run_command(f"mpiexec -n {args.ranks} python -c \"" +
-                "from plain_mpi import run_plain_mpi; " +
+                "from sequential_boruvka import run_plain_mpi; " +
                 "from graph_utils import load_graph; " +
                 f"num_nodes, edges = load_graph('{graph_file}'); " +
                 f"run_plain_mpi(num_nodes, edges, '{mpi_dir}')\"")
     
-    # Step 4: Run K-Machine  
-    print("\n🌐 Running K-Machine...")
+    # Step 4: Run Distributed Borůvka  
+    print("\n🌐 Running Distributed Borůvka...")
     run_command(f"mpiexec -n {args.ranks} python -c \"" +
-                "from kmachine_boruvka import run_kmachine_boruvka; " +
+                "from distributed_boruvka import run_kmachine_boruvka; " +
                 "from graph_utils import load_graph; " +
                 f"num_nodes, edges = load_graph('{graph_file}'); " +
                 f"run_kmachine_boruvka(num_nodes, edges, '{kmachine_dir}')\"")
@@ -151,8 +165,8 @@ def main():
     print("=" * 60)
     print(f"📁 Results directory: {results_dir}")
     print("📊 Files created:")
-    print(f"   • {mpi_dir}/mst_plain_mpi.txt")
-    print(f"   • {kmachine_dir}/mst_kmachine.txt") 
+    print(f"   • {mpi_dir}/mst_sequential.txt")
+    print(f"   • {kmachine_dir}/mst_distributed.txt") 
     print(f"   • {comparison_file}")
     if args.animate:
         print(f"   • {kmachine_dir}/mst_animation.gif")

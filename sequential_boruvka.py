@@ -85,17 +85,29 @@ def run_plain_mpi(num_nodes: int, edges: List[Tuple[int, int, float]], out_dir: 
     total_w = sum(w for (_, _, w) in mst_edges)
     
     # MST file
-    with open(os.path.join(out_dir, 'mst_plain_mpi.txt'), 'w') as f:
-        f.write('u v w\n')
+    with open(os.path.join(out_dir, 'mst_sequential.txt'), 'w') as f:
+        f.write("SEQUENTIAL BORŮVKA MINIMUM SPANNING TREE\n")
+        f.write("=" * 45 + "\n")
+        f.write("Edge List (Source -> Destination: Weight)\n")
+        f.write("-" * 45 + "\n")
         for (u, v, w) in mst_edges:
-            f.write(f"{u} {v} {w}\n")
-        f.write(f"Total weight: {total_w}\n")
+            f.write(f"{u:3d} -> {v:3d}: {w:12.6f}\n")
+        f.write("-" * 45 + "\n")
+        f.write(f"Total MST Weight: {total_w:.6f}\n")
+        f.write(f"Number of Edges: {len(mst_edges)}\n")
     
     # Metrics file
     summary = metrics.summary()
     with open(os.path.join(out_dir, 'metrics.txt'), 'w') as f:
+        f.write("SEQUENTIAL BORŮVKA PERFORMANCE METRICS\n")
+        f.write("=" * 40 + "\n")
         for k, v in summary.items():
-            f.write(f"{k}: {v}\n")
+            if k == 'total_time':
+                f.write(f"{k}: {float(v):.6f} seconds\n")
+            elif k == 'avg_iter_time':
+                f.write(f"{k}: {float(v):.6f} seconds\n")
+            else:
+                f.write(f"{k}: {v}\n")
     
     # Iteration log
     with open(os.path.join(out_dir, 'iteration_log.jsonl'), 'w') as f:
