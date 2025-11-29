@@ -64,7 +64,10 @@ def run_kmachine_boruvka(num_nodes: int, edges: List[Tuple[int, int, float]], ou
                             best_edge = (u, u_edge, w)
             
             if best_edge:
-                local_candidates[comp_u] = best_edge
+                # Keep only the cheapest candidate for this component
+                existing = local_candidates.get(comp_u)
+                if existing is None or best_edge[2] < existing[2]:
+                    local_candidates[comp_u] = best_edge
         
         # 2. Gather all candidates to rank 0
         all_candidates = comm.gather(list(local_candidates.values()), root=0)

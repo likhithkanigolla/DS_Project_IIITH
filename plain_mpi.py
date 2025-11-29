@@ -45,9 +45,16 @@ def run_plain_mpi(num_nodes: int, edges: List[Tuple[int, int, float]], out_dir: 
             rv = dsu.find(v)
             if ru == rv:
                 continue
+            
+            # Consider edge for component ru (u -> v)
             cur = local_best.get(ru)
             if cur is None or w < cur[2]:
                 local_best[ru] = (u, v, w)
+            
+            # Consider edge for component rv (v -> u)  
+            cur = local_best.get(rv)
+            if cur is None or w < cur[2]:
+                local_best[rv] = (v, u, w)
         
         union_pairs = []
         # Select edges and union components
