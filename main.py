@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import time
+import networkx as nx
 from datetime import datetime
 from graph_utils import generate_graph
 from visualization import save_animation, build_gif, save_growth_chart, save_iteration_tables
@@ -28,22 +29,80 @@ def run_command(cmd):
     return result.stdout
 
 
-def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str):
+def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str, verification=None):
     """Write platform comparison file."""
-    def read_metric(path, key):
-        try:
-            with open(path, 'r') as f:
-                for line in f:
-                    if line.startswith(f"{key}:"):
-                        value = line.split(':', 1)[1].strip()
-                        # Remove 'seconds' suffix if present
-                        if value.endswith(' seconds'):
-                            value = value.replace(' seconds', '')
-                        return value
-        except Exception:
-            return None
+def read_metric(file_path, metric_name):
+    """Extract a specific metric value from metrics file."""
+    try:
+        with open(file_path, 'r') as f:
+            for line in f:
+                if line.strip().startswith(f'{metric_name}:'):
+                    value = line.split(':')[1].strip()
+                    # Remove 'seconds' suffix if present
+                    if value.endswith(' seconds'):
+                        value = value.replace(' seconds', '')
+                    return value
+    except FileNotFoundError:
         return None
+    return None
+
+def verify_mst(graph_file, sequential_mst, distributed_mst):
+    """Verify MST correctness using Kruskal's algorithm as ground truth."""
+    from graph_utils import load_graph
     
+    # Load graph
+    num_nodes, edges = load_graph(graph_file)
+    
+    # Create NetworkX graph and compute optimal MST
+    G = nx.Graph()
+    for u, v, w in edges:
+        G.add_edge(u, v, weight=w)
+    
+    optimal_mst = nx.minimum_spanning_tree(G, algorithm='kruskal')
+    optimal_weight = sum(data['weight'] for u, v, data in optimal_mst.edges(data=True))
+    
+    # Read MST files
+    def read_mst_edges(filename):
+        edges = []
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('=') or line.startswith('-') or 'MST' in line or 'Edge List' in line or 'Total' in line or 'Number' in line or 'K-Machines' in line or 'Input Size' in line:
+                    continue
+                if '->' in line:  # Sequential format
+                    parts = line.replace('->', ' ').replace(':', ' ').split()
+                    if len(parts) >= 3:
+                        u, v, w = int(parts[0]), int(parts[1]), float(parts[2])
+                        edges.append((u, v, w))
+                else:  # Distributed format
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        try:
+                            u, v, w = int(parts[0]), int(parts[1]), float(parts[2])
+                            edges.append((u, v, w))
+                        except ValueError:
+                            continue
+        return edges, sum(w for u, v, w in edges)
+    
+    seq_edges, seq_weight = read_mst_edges(sequential_mst)
+    dist_edges, dist_weight = read_mst_edges(distributed_mst)
+    
+    # Verification results
+    seq_valid = abs(seq_weight - optimal_weight) < 1e-5
+    dist_valid = abs(dist_weight - optimal_weight) < 1e-5
+    weights_match = abs(seq_weight - dist_weight) < 1e-5
+    
+    return {
+        'optimal_weight': optimal_weight,
+        'sequential_weight': seq_weight,
+        'distributed_weight': dist_weight,
+        'sequential_valid': seq_valid,
+        'distributed_valid': dist_valid,
+        'weights_match': weights_match,
+        'num_edges': len(seq_edges)
+    }
+
+def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str, verification=None):
     mpi_metrics = os.path.join(mpi_dir, 'metrics.txt')
     km_metrics = os.path.join(kmachine_dir, 'metrics.txt')
     
@@ -56,6 +115,19 @@ def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str):
         with open(comparison_file, 'w') as f:
             f.write("MST Algorithm Platform Comparison\n")
             f.write("=" * 50 + "\n\n")
+            
+            # MST Verification Results
+            if verification:
+                f.write("MST VERIFICATION\n")
+                f.write("-" * 20 + "\n")
+                f.write(f"Optimal MST Weight (Kruskal): {verification['optimal_weight']:.6f}\n")
+                f.write(f"Sequential Borůvka Weight: {verification['sequential_weight']:.6f}\n")
+                f.write(f"Distributed Borůvka Weight: {verification['distributed_weight']:.6f}\n")
+                f.write(f"Sequential Algorithm: {'✅ OPTIMAL' if verification['sequential_valid'] else '❌ SUBOPTIMAL'}\n")
+                f.write(f"Distributed Algorithm: {'✅ OPTIMAL' if verification['distributed_valid'] else '❌ SUBOPTIMAL'}\n")
+                f.write(f"Weights Match: {'✅ YES' if verification['weights_match'] else '❌ NO'}\n")
+                f.write(f"MST Edges: {verification['num_edges']}\n\n")
+            
             f.write("PERFORMANCE METRICS\n")
             f.write("-" * 20 + "\n")
             f.write(f"Sequential Borůvka total_time: {float(mpi_time):.6f} seconds\n")
@@ -80,6 +152,16 @@ def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str):
                 pass
         
         print(f"📊 Comparison written: {comparison_file}")
+        
+        # Print verification summary
+        if verification:
+            print("\n" + "=" * 60)
+            print("🔍 MST VERIFICATION SUMMARY")
+            print("=" * 60)
+            print(f"Sequential Algorithm: {'✅ OPTIMAL' if verification['sequential_valid'] else '❌ SUBOPTIMAL'}")
+            print(f"Distributed Algorithm: {'✅ OPTIMAL' if verification['distributed_valid'] else '❌ SUBOPTIMAL'}")
+            print(f"Algorithms Match: {'✅ YES' if verification['weights_match'] else '❌ NO'}")
+            print(f"Optimal Weight: {verification['optimal_weight']:.6f}")
 
 
 def main():
@@ -127,11 +209,19 @@ def main():
                 f"num_nodes, edges = load_graph('{graph_file}'); " +
                 f"run_kmachine_boruvka(num_nodes, edges, '{kmachine_dir}')\"")
     
-    # Step 5: Generate comparison
-    comparison_file = os.path.join(results_dir, 'platform_comparison.txt')
-    write_comparison(mpi_dir, kmachine_dir, comparison_file)
+    # Step 5: Verify MST correctness
+    print("\n🔍 Verifying MST correctness...")
+    verification = verify_mst(
+        graph_file, 
+        os.path.join(mpi_dir, 'mst_sequential.txt'),
+        os.path.join(kmachine_dir, 'mst_distributed.txt')
+    )
     
-    # Step 6: Generate animations (if requested)
+    # Step 6: Generate comparison
+    comparison_file = os.path.join(results_dir, 'platform_comparison.txt')
+    write_comparison(mpi_dir, kmachine_dir, comparison_file, verification)
+    
+    # Step 7: Generate animations (if requested)
     if args.animate:
         print("\n🎬 Generating animations...")
         try:
