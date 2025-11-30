@@ -1,0 +1,24 @@
+MST Algorithm Platform Comparison
+==================================================
+
+MST VERIFICATION
+--------------------
+Optimal MST Weight (Kruskal): 851788.919958
+Sequential Borůvka Weight: 851788.919939
+Distributed Borůvka Weight: 851788.919958
+Sequential Algorithm: SUBOPTIMAL
+Distributed Algorithm: OPTIMAL
+Weights Match: NO
+MST Edges: 19999
+
+PERFORMANCE METRICS
+--------------------
+Sequential Borůvka total_time: 0.335514 seconds
+Distributed Borůvka total_time: 0.554209 seconds
+Sequential Borůvka rounds: 0
+Distributed Borůvka rounds: 14
+
+PERFORMANCE ANALYSIS
+--------------------
+Speed ratio (Distributed/Sequential): 1.652x
+Sequential is 1.7x faster than Distributed

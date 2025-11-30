@@ -1,0 +1,6 @@
+SEQUENTIAL BORŮVKA PERFORMANCE METRICS
+========================================
+total_time: 1.829060 seconds
+iterations: 7
+avg_iter_time: 0.185792 seconds
+comm_rounds: 0

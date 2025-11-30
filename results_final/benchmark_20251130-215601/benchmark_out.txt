@@ -1,0 +1,105 @@
+============================================================                                                                                                                           
+MST ALGORITHM BENCHMARK SUITE                                                                                                                                                          
+============================================================                                                                                                                           
+Test Configuration:                                                                                                                                                                    
+   • Input Sizes (N): [1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000]                                                                                                          
+   • Machine Counts (K): [8, 16, 24, 32, 40, 48, 56]                                                                                                                                   
+   • Fixed K for Time Analysis: 48                                                                                                                                                     
+   • Fixed N for Speedup Analysis: 100000                                                                                                                                              
+   • Random Seed: 42                                                                                                                                                                   
+   • Results Directory: results/benchmark_20251130-215601                                                                                                                              
+                                                                                                                                                                                       
+============================================================                                                                                                                           
+Phase 1: Performance vs Input Size                                                                                                                                                     
+============================================================
+  Running N=1000, K=48...
+    SUCCESS: Sequential: 0.021709s, Distributed: 0.028506s, Rounds: 10
+  Running N=2000, K=48...
+    SUCCESS: Sequential: 0.035879s, Distributed: 0.051925s, Rounds: 10
+  Running N=5000, K=48...
+    SUCCESS: Sequential: 0.068718s, Distributed: 0.134710s, Rounds: 10
+  Running N=10000, K=48...
+    SUCCESS: Sequential: 0.147740s, Distributed: 0.315133s, Rounds: 12
+  Running N=20000, K=48...
+    SUCCESS: Sequential: 0.335514s, Distributed: 0.554209s, Rounds: 14
+  Running N=50000, K=48...
+    SUCCESS: Sequential: 1.015323s, Distributed: 2.170900s, Rounds: 14
+  Running N=100000, K=48...
+    SUCCESS: Sequential: 2.091053s, Distributed: 7.725828s, Rounds: 14
+  Running N=200000, K=48...
+    SUCCESS: Sequential: 4.395258s, Distributed: 47.114750s, Rounds: 14
+
+============================================================
+Phase 2: Scalability vs Number of Machines
+============================================================
+  Running N=100000, K=8...
+    SUCCESS: Sequential: 2.117997s, Distributed: 181.339262s, Rounds: 14
+  Running N=100000, K=16...
+    SUCCESS: Sequential: 1.757047s, Distributed: 58.766005s, Rounds: 14
+  Running N=100000, K=24...
+    SUCCESS: Sequential: 1.784166s, Distributed: 31.079046s, Rounds: 14
+  Running N=100000, K=32...
+    SUCCESS: Sequential: 1.768916s, Distributed: 16.694071s, Rounds: 14
+  Running N=100000, K=40...
+     SUCCESS: Sequential: 1.769568s, Distributed: 10.508796s ,Rounds:14                                                                                                                
+  Running N=100000, K=48...                                                                                                                                                            
+    SUCCESS: Sequential: 1.747473s, Distributed: 7.619746s, Rounds: 14
+  Running N=100000, K=56...
+    SUCCESS: Sequential: 1.819823s, Distributed: 6.070193s, Rounds: 14
+Saving benchmark data...
+   SUCCESS: Raw data saved to: results/benchmark_20251130-215601/benchmark_results.json
+
+Generating visualizations...
+Generating performance comparison plot...
+Generating communication complexity plot...
+Generating scalability analysis plot...
+Generating efficiency analysis plot...
+   SUCCESS: Combined analysis: results/benchmark_20251130-215601/benchmark_analysis.png
+   SUCCESS: Individual plots saved in: results/benchmark_20251130-215601
+
+============================================================
+BENCHMARK SUMMARY
+============================================================
+
+PERFORMANCE ANALYSIS:
+  N=1000: Sequential=0.021709s, Distributed=0.028506s, Overhead=1.3x
+  N=2000: Sequential=0.035879s, Distributed=0.051925s, Overhead=1.4x
+  N=5000: Sequential=0.068718s, Distributed=0.134710s, Overhead=2.0x
+  N=10000: Sequential=0.147740s, Distributed=0.315133s, Overhead=2.1x
+  N=20000: Sequential=0.335514s, Distributed=0.554209s, Overhead=1.7x
+  N=50000: Sequential=1.015323s, Distributed=2.170900s, Overhead=2.1x
+  N=100000: Sequential=2.091053s, Distributed=7.725828s, Overhead=3.7x
+  N=200000: Sequential=4.395258s, Distributed=47.114750s, Overhead=10.7x
+
+SCALABILITY ANALYSIS:
+  K=8: Speedup=0.01x, Efficiency=0.00
+  K=16: Speedup=0.03x, Efficiency=0.00
+  K=24: Speedup=0.06x, Efficiency=0.00
+  K=32: Speedup=0.11x, Efficiency=0.00
+  K=40: Speedup=0.17x, Efficiency=0.00
+  K=48: Speedup=0.23x, Efficiency=0.00
+  K=56: Speedup=0.30x, Efficiency=0.01
+  COMMUNICATION ANALYSIS:
+  N=1000: Rounds=10, ~O(log N)≈10
+  N=2000: Rounds=10, ~O(log N)≈11
+  N=5000: Rounds=10, ~O(log N)≈13
+  N=10000: Rounds=12, ~O(log N)≈14
+  N=20000: Rounds=14, ~O(log N)≈15
+  N=50000: Rounds=14, ~O(log N)≈16
+  N=100000: Rounds=14, ~O(log N)≈17
+  N=200000: Rounds=14, ~O(log N)≈18
+
+============================================================
+BENCHMARKING COMPLETE!
+============================================================
+Generated Files:
+   • results/benchmark_20251130-215601/benchmark_results.json (Raw data)
+   • results/benchmark_20251130-215601/benchmark_analysis.png (Combined analysis)
+   • results/benchmark_20251130-215601/plot_performance.png (Performance comparison)
+   • results/benchmark_20251130-215601/plot_speedup.png (Scalability analysis)
+   • results/benchmark_20251130-215601/plot_rounds.png (Communication complexity)
+
+Next Steps:
+   • Run: python main.py --nodes 100 --animate
+   • This will generate convergence charts and animations
+============================================================

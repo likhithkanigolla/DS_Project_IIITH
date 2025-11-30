@@ -1,0 +1,16 @@
+DECENTRALIZED K-MACHINE PERFORMANCE METRICS
+==================================================
+K-Machines: 48
+Input Size: 200000 nodes, 249909 edges
+N/k Ratio: 4166.7
+--------------------------------------------------
+total_time: 47.114750
+iterations: 7
+avg_iter_time: 6.574932
+comm_rounds: 14
+--------------------------------------------------
+K-MACHINE COORDINATION
+Communication Pattern: Decentralized (allgather + allreduce)
+Coordinator Dependency: None
+Load Balancing: Hash-based
+Fault Tolerance: Distributed consensus
