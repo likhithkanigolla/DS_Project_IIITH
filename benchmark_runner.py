@@ -16,8 +16,8 @@ import time
 import matplotlib.pyplot as plt
 
 # Configuration
-NODES_TESTS = [50, 100, 200, 500, 1000]  # Sizes to test for Time vs N
-RANKS_TESTS = [2, 4, 6, 8]              # Ranks to test for Speedup vs K
+NODES_TESTS = [1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000]  # Sizes to test for Time vs N
+RANKS_TESTS = [2, 4, 6, 8, 16, 24, 32, 48, 64]              # Ranks to test for Speedup vs K
 FIXED_N_FOR_SPEEDUP = 1000              # Graph size for Speedup test
 FIXED_K_FOR_TIME = 4                    # Ranks for Time test
 RESULTS_FILE = "benchmark_results.json"
