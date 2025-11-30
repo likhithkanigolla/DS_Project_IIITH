@@ -21,10 +21,10 @@ def save_graph_file(num_nodes: int, edges, filename: str):
 
 def run_command(cmd):
     """Execute shell command."""
-    print(f"🚀 {cmd}")
+    print(f"Running: {cmd}")
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"❌ Error (exit code {result.returncode}):")
+        print(f"Error (exit code {result.returncode}):")
         print(f"   stderr: {result.stderr}")
         print(f"   stdout: {result.stdout}")
         sys.exit(result.returncode)
@@ -125,9 +125,9 @@ def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str, veri
                 f.write(f"Optimal MST Weight (Kruskal): {verification['optimal_weight']:.6f}\n")
                 f.write(f"Sequential Borůvka Weight: {verification['sequential_weight']:.6f}\n")
                 f.write(f"Distributed Borůvka Weight: {verification['distributed_weight']:.6f}\n")
-                f.write(f"Sequential Algorithm: {'✅ OPTIMAL' if verification['sequential_valid'] else '❌ SUBOPTIMAL'}\n")
-                f.write(f"Distributed Algorithm: {'✅ OPTIMAL' if verification['distributed_valid'] else '❌ SUBOPTIMAL'}\n")
-                f.write(f"Weights Match: {'✅ YES' if verification['weights_match'] else '❌ NO'}\n")
+                f.write(f"Sequential Algorithm: {'OPTIMAL' if verification['sequential_valid'] else 'SUBOPTIMAL'}\n")
+                f.write(f"Distributed Algorithm: {'OPTIMAL' if verification['distributed_valid'] else 'SUBOPTIMAL'}\n")
+                f.write(f"Weights Match: {'YES' if verification['weights_match'] else 'NO'}\n")
                 f.write(f"MST Edges: {verification['num_edges']}\n\n")
             
             f.write("PERFORMANCE METRICS\n")
@@ -153,16 +153,16 @@ def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str, veri
             except ValueError:
                 pass
         
-        print(f"📊 Comparison written: {comparison_file}")
+        print(f"Comparison written: {comparison_file}")
         
         # Print verification summary
         if verification:
             print("\n" + "=" * 60)
-            print("🔍 MST VERIFICATION SUMMARY")
+            print("MST VERIFICATION SUMMARY")
             print("=" * 60)
-            print(f"Sequential Algorithm: {'✅ OPTIMAL' if verification['sequential_valid'] else '❌ SUBOPTIMAL'}")
-            print(f"Distributed Algorithm: {'✅ OPTIMAL' if verification['distributed_valid'] else '❌ SUBOPTIMAL'}")
-            print(f"Algorithms Match: {'✅ YES' if verification['weights_match'] else '❌ NO'}")
+            print(f"Sequential Algorithm: {'OPTIMAL' if verification['sequential_valid'] else 'SUBOPTIMAL'}")
+            print(f"Distributed Algorithm: {'OPTIMAL' if verification['distributed_valid'] else 'SUBOPTIMAL'}")
+            print(f"Algorithms Match: {'YES' if verification['weights_match'] else 'NO'}")
             print(f"Optimal Weight: {verification['optimal_weight']:.6f}")
 
 
@@ -175,11 +175,11 @@ def main():
     args = p.parse_args()
     
     print("=" * 60)
-    print("🌲 MST ANALYSIS: Sequential vs Distributed Borůvka")
+    print("MST ANALYSIS: Sequential vs Distributed Borůvka")
     print("=" * 60)
     
     # Step 1: Generate graph
-    print(f"🎲 Generating graph: {args.nodes} nodes, seed {args.seed}")
+    print(f"Generating graph: {args.nodes} nodes, seed {args.seed}")
     
     # Step 2: Create results directory
     timestamp = time.strftime('%Y%m%d-%H%M%S')
@@ -193,13 +193,13 @@ def main():
     # Save graph file in results directory
     graph_file = os.path.join(results_dir, f"graph_n{args.nodes}_s{args.seed}.txt")
     save_graph_file(num_nodes, edges, graph_file)
-    print(f"📁 Graph saved: {graph_file}")
+    print(f"Graph saved: {graph_file}")
     
     mpi_dir = os.path.join(results_dir, 'sequential')
     kmachine_dir = os.path.join(results_dir, 'distributed')
     
     # Step 3: Run Sequential Borůvka
-    print("\n🖥️  Running Sequential Borůvka...")
+    print("\nRunning Sequential Borůvka...")
     run_command(f"mpiexec -n {args.ranks} python3 -c \"" +
                 "import sys; sys.path.insert(0, '.'); " +
                 "from sequential_boruvka import run_plain_mpi; " +
@@ -208,7 +208,7 @@ def main():
                 f"run_plain_mpi(num_nodes, edges, '{mpi_dir}')\"")
     
     # Step 4: Run Distributed Borůvka  
-    print("\n🌐 Running Distributed Borůvka...")
+    print("\nRunning Distributed Borůvka...")
     run_command(f"mpiexec -n {args.ranks} python3 -c \"" +
                 "import sys; sys.path.insert(0, '.'); " +
                 "from distributed_boruvka import run_kmachine_boruvka; " +
@@ -217,7 +217,7 @@ def main():
                 f"run_kmachine_boruvka(num_nodes, edges, '{kmachine_dir}')\"")
     
     # Step 5: Verify MST correctness
-    print("\n🔍 Verifying MST correctness...")
+    print("\nVerifying MST correctness...")
     verification = verify_mst(
         graph_file, 
         os.path.join(mpi_dir, 'mst_sequential.txt'),
@@ -230,7 +230,7 @@ def main():
     
     # Step 7: Generate animations and charts (if requested)
     if args.animate:
-        print("\n🎬 Generating visualizations...")
+        print("\nGenerating visualizations...")
         try:
             import json
             kmachine_log = os.path.join(kmachine_dir, 'iteration_log.jsonl')
@@ -258,16 +258,16 @@ def main():
                 mst_sizes = []
 
             # 1. Generate Growth/Convergence Chart (NEW)
-            print("   📊 Generating convergence chart...")
+            print("   Generating convergence chart...")
             if component_counts and mst_sizes:
                 chart_path = save_growth_chart(component_counts, mst_sizes, kmachine_dir)
                 if chart_path:
-                    print(f"   ✅ Convergence chart saved: {chart_path}")
+                    print(f"   Convergence chart saved: {chart_path}")
             else:
-                print("   ⚠️  No convergence data available")
+                print("   Warning: No convergence data available")
 
             # 2. Generate Animation (Existing)
-            print("   🎥 Generating MST animation...")
+            print("   Generating MST animation...")
             if snapshots:
                 # Convert union data to weighted edge format for animation
                 edge_weights = {(min(u, v), max(u, v)): w for u, v, w in edges}
@@ -290,22 +290,22 @@ def main():
                 actual_frames = [f for f in frame_files if os.path.exists(f)]
                 if actual_frames:
                     build_gif(actual_frames, gif_path, duration=2.0)
-                    print(f"   ✅ Animation saved: {gif_path}")
+                    print(f"   Animation saved: {gif_path}")
                 else:
-                    print("   ⚠️  No animation frames found")
+                    print("   Warning: No animation frames found")
             else:
-                print("   ⚠️  No snapshot data available")
+                print("   Warning: No snapshot data available")
         except Exception as e:
-            print(f"⚠️  Animation failed: {e}")
+            print(f"Warning: Animation failed: {e}")
             import traceback
             traceback.print_exc()
     
     # Step 7: Summary
-    print("\\n" + "=" * 60)
-    print("✅ ANALYSIS COMPLETE")
+    print("\n" + "=" * 60)
+    print("ANALYSIS COMPLETE")
     print("=" * 60)
-    print(f"📁 Results directory: {results_dir}")
-    print("📊 Files created:")
+    print(f"Results directory: {results_dir}")
+    print("Files created:")
     print(f"   • {mpi_dir}/mst_sequential.txt")
     print(f"   • {kmachine_dir}/mst_distributed.txt") 
     print(f"   • {comparison_file}")

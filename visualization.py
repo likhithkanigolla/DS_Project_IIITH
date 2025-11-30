@@ -77,7 +77,7 @@ E) Each machine applies unions locally
             for (u, v, w) in snapshot:
                 key = tuple(sorted((u, v)))
                 if key in new_edges:
-                    html_parts.append(f'<tr class="new-edge"><td>{edge_num}</td><td>{u}</td><td>{v}</td><td>{w:.6f}</td><td>✓ ADDED</td></tr>')
+                    html_parts.append(f'<tr class="new-edge"><td>{edge_num}</td><td>{u}</td><td>{v}</td><td>{w:.6f}</td><td>ADDED</td></tr>')
                     edge_num += 1
             html_parts.append("</table>")
         
