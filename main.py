@@ -24,13 +24,15 @@ def run_command(cmd):
     print(f"🚀 {cmd}")
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"❌ Error: {result.stderr}")
+        print(f"❌ Error (exit code {result.returncode}):")
+        print(f"   stderr: {result.stderr}")
+        print(f"   stdout: {result.stdout}")
         sys.exit(result.returncode)
+    if result.stdout:
+        print(result.stdout)
     return result.stdout
 
 
-def write_comparison(mpi_dir: str, kmachine_dir: str, comparison_file: str, verification=None):
-    """Write platform comparison file."""
 def read_metric(file_path, metric_name):
     """Extract a specific metric value from metrics file."""
     try:
@@ -178,15 +180,18 @@ def main():
     
     # Step 1: Generate graph
     print(f"🎲 Generating graph: {args.nodes} nodes, seed {args.seed}")
-    num_nodes, edges = generate_graph(args.nodes, seed=args.seed)
     
     # Step 2: Create results directory
     timestamp = time.strftime('%Y%m%d-%H%M%S')
     results_dir = os.path.join('results', timestamp)
+    os.makedirs(results_dir, exist_ok=True)
+    
+    # Generate graph with visualization
+    graph_viz_path = os.path.join(results_dir, f"graph_n{args.nodes}_s{args.seed}.png")
+    num_nodes, edges = generate_graph(args.nodes, seed=args.seed, output_path=graph_viz_path)
     
     # Save graph file in results directory
     graph_file = os.path.join(results_dir, f"graph_n{args.nodes}_s{args.seed}.txt")
-    os.makedirs(results_dir, exist_ok=True)
     save_graph_file(num_nodes, edges, graph_file)
     print(f"📁 Graph saved: {graph_file}")
     
@@ -195,7 +200,8 @@ def main():
     
     # Step 3: Run Sequential Borůvka
     print("\n🖥️  Running Sequential Borůvka...")
-    run_command(f"mpiexec -n {args.ranks} python -c \"" +
+    run_command(f"mpiexec -n {args.ranks} python3 -c \"" +
+                "import sys; sys.path.insert(0, '.'); " +
                 "from sequential_boruvka import run_plain_mpi; " +
                 "from graph_utils import load_graph; " +
                 f"num_nodes, edges = load_graph('{graph_file}'); " +
@@ -203,7 +209,8 @@ def main():
     
     # Step 4: Run Distributed Borůvka  
     print("\n🌐 Running Distributed Borůvka...")
-    run_command(f"mpiexec -n {args.ranks} python -c \"" +
+    run_command(f"mpiexec -n {args.ranks} python3 -c \"" +
+                "import sys; sys.path.insert(0, '.'); " +
                 "from distributed_boruvka import run_kmachine_boruvka; " +
                 "from graph_utils import load_graph; " +
                 f"num_nodes, edges = load_graph('{graph_file}'); " +
