@@ -89,7 +89,6 @@ def run_plain_mpi(num_nodes: int, edges: List[Tuple[int, int, float]], out_dir: 
 
         if not os.path.exists(os.path.join(out_dir, "mst_sequential.txt")):
             print("File not getting created!!")
-            os.
         
         # MST file
         with open(os.path.join(out_dir, 'mst_sequential.txt'), 'w') as f:
