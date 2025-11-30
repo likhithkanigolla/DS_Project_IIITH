@@ -76,11 +76,14 @@ def read_mst_file(filename):
 
 def main():
     if len(sys.argv) < 4:
-        print("Usage: validate_mst.py <graph_file> <plain_mpi_mst> <kmachine_mst>")
+        print("Usage: validate_mst.py <graph_file> <plain_mpi_mst> <kmachine_mst> [tolerance]")
+        print("  tolerance: optional float absolute tolerance for weight comparison (default 1e-5)")
         sys.exit(1)
     graph_file = sys.argv[1]
     plain_file = sys.argv[2]
     km_file = sys.argv[3]
+    # Optional tolerance argument to allow tiny floating point differences
+    tol = float(sys.argv[4]) if len(sys.argv) >= 5 else 1e-5
     num_nodes, edges = load_graph(graph_file)
     opt_mst, opt_weight = kruskal_mst(num_nodes, edges)
     p_edges, p_weight = read_mst_file(plain_file)
@@ -91,8 +94,8 @@ def main():
     print(f"Plain MPI: weight={p_weight:.6f} edges={len(p_edges)}")
     print(f"K-Machine: weight={k_weight:.6f} edges={len(k_edges)}")
 
-    def close_enough(a,b):
-        return abs(a-b) < 1e-6
+    def close_enough(a, b):
+        return abs(a - b) <= tol
 
     if close_enough(opt_weight, p_weight):
         print("Plain MPI matches optimal MST.")

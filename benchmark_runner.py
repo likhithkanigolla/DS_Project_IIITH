@@ -32,13 +32,13 @@ def run_experiment(nodes, ranks):
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     
     if result.returncode != 0:
-        print(f"    ❌ Failed: {result.stderr}")
+        print(f"    FAILED: {result.stderr}")
         return None
     
     # Parse the output directory from stdout - use simpler pattern
     match = re.search(r"Results directory: (results/[0-9-]+)", result.stdout)
     if not match:
-        print("    ❌ Failed to find results directory")
+        print("    FAILED to find results directory")
         print(f"    Last 200 chars: {result.stdout[-200:]}")
         return None
         
@@ -63,7 +63,7 @@ def extract_metrics(res_dir):
                     elif 'comm_rounds' in line:
                         metrics['seq_rounds'] = int(line.split(':')[1].strip())
         except Exception as e:
-            print(f"    ⚠️  Could not read sequential metrics: {e}")
+            print(f"    Warning: Could not read sequential metrics: {e}")
 
     # Read Distributed Time & Rounds
     dist_metrics_file = os.path.join(res_dir, 'distributed/metrics.txt')
@@ -79,9 +79,9 @@ def extract_metrics(res_dir):
                     elif 'comm_rounds' in line:
                         metrics['rounds'] = int(line.split(':')[1].strip())
         except Exception as e:
-            print(f"    ⚠️  Could not read distributed metrics: {e}")
+            print(f"    Warning: Could not read distributed metrics: {e}")
     
-    print(f"    ✅ Sequential: {metrics['seq_time']:.6f}s, Distributed: {metrics['dist_time']:.6f}s, Rounds: {metrics['rounds']}")
+    print(f"    SUCCESS: Sequential: {metrics['seq_time']:.6f}s, Distributed: {metrics['dist_time']:.6f}s, Rounds: {metrics['rounds']}")
     return metrics
 
 def plot_results(data, output_dir):
@@ -90,7 +90,7 @@ def plot_results(data, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     
     # 1. Performance Comparison (Time vs N)
-    print("📊 Generating performance comparison plot...")
+    print("Generating performance comparison plot...")
     ns = [d['n'] for d in data['time_vs_n']]
     seq_times = [d['metrics']['seq_time'] for d in data['time_vs_n']]
     dist_times = [d['metrics']['dist_time'] for d in data['time_vs_n']]
@@ -107,7 +107,7 @@ def plot_results(data, output_dir):
     plt.yscale('log')  # Log scale for better visibility
     
     # 2. Communication Overhead (Rounds vs N)
-    print("📊 Generating communication complexity plot...")
+    print("Generating communication complexity plot...")
     rounds = [d['metrics']['rounds'] for d in data['time_vs_n']]
     
     plt.subplot(2, 2, 2)
@@ -128,7 +128,7 @@ def plot_results(data, output_dir):
         plt.legend()
 
     # 3. Scalability (Speedup vs K)
-    print("📊 Generating scalability analysis plot...")
+    print("Generating scalability analysis plot...")
     ks = [d['k'] for d in data['speedup_vs_k']]
     # Speedup = Seq_Time / Dist_Time
     # Use sequential time from same experiment size
@@ -150,7 +150,7 @@ def plot_results(data, output_dir):
     plt.grid(True, alpha=0.3)
     
     # 4. Efficiency vs Ranks
-    print("📊 Generating efficiency analysis plot...")
+    print("Generating efficiency analysis plot...")
     efficiencies = [speedup/k for speedup, k in zip(speedups, ks)]
     
     plt.subplot(2, 2, 4)
@@ -227,12 +227,12 @@ def save_individual_plots(data, output_dir):
 
 def print_summary(data):
     """Print a summary of benchmark results."""
-    print("\\n" + "="*60)
-    print("📊 BENCHMARK SUMMARY")
+    print("\n" + "="*60)
+    print("BENCHMARK SUMMARY")
     print("="*60)
     
     # Performance Analysis
-    print("\\n🚀 PERFORMANCE ANALYSIS:")
+    print("\nPERFORMANCE ANALYSIS:")
     for d in data['time_vs_n']:
         n = d['n']
         seq_t = d['metrics']['seq_time']
@@ -241,7 +241,7 @@ def print_summary(data):
         print(f"  N={n:4d}: Sequential={seq_t:.6f}s, Distributed={dist_t:.6f}s, Overhead={overhead:.1f}x")
     
     # Scalability Analysis  
-    print("\\n📈 SCALABILITY ANALYSIS:")
+    print("\nSCALABILITY ANALYSIS:")
     for d in data['speedup_vs_k']:
         k = d['k']
         seq_t = d['metrics']['seq_time'] 
@@ -251,7 +251,7 @@ def print_summary(data):
         print(f"  K={k}: Speedup={speedup:.2f}x, Efficiency={efficiency:.2f}")
     
     # Communication Analysis
-    print("\\n📡 COMMUNICATION ANALYSIS:")
+    print("\nCOMMUNICATION ANALYSIS:")
     for d in data['time_vs_n']:
         n = d['n']
         rounds = d['metrics']['rounds']
@@ -266,9 +266,9 @@ def main():
     os.makedirs(benchmark_dir, exist_ok=True)
     
     print("="*60)
-    print("🔬 MST ALGORITHM BENCHMARK SUITE")
+    print("MST ALGORITHM BENCHMARK SUITE")
     print("="*60)
-    print("📋 Test Configuration:")
+    print("Test Configuration:")
     print(f"   • Input Sizes (N): {NODES_TESTS}")
     print(f"   • Machine Counts (K): {RANKS_TESTS}")
     print(f"   • Fixed K for Time Analysis: {FIXED_K_FOR_TIME}")
@@ -278,8 +278,8 @@ def main():
     
     results = {'time_vs_n': [], 'speedup_vs_k': []}
     
-    print("\\n" + "="*60)
-    print("🕐 Phase 1: Performance vs Input Size")
+    print("\n" + "="*60)
+    print("Phase 1: Performance vs Input Size")
     print("="*60)
     for n in NODES_TESTS:
         m = run_experiment(n, FIXED_K_FOR_TIME)
@@ -287,8 +287,8 @@ def main():
             results['time_vs_n'].append({'n': n, 'k': FIXED_K_FOR_TIME, 'metrics': m})
         time.sleep(1)  # Brief pause between runs
         
-    print("\\n" + "="*60)
-    print("📈 Phase 2: Scalability vs Number of Machines")
+    print("\n" + "="*60)
+    print("Phase 2: Scalability vs Number of Machines")
     print("="*60)
     for k in RANKS_TESTS:
         m = run_experiment(FIXED_N_FOR_SPEEDUP, k)
@@ -298,30 +298,30 @@ def main():
         
     # Save raw data in benchmark directory
     results_file = os.path.join(benchmark_dir, 'benchmark_results.json')
-    print("\\n💾 Saving benchmark data...")
+    print("\nSaving benchmark data...")
     with open(results_file, 'w') as f:
         json.dump(results, f, indent=2)
-    print(f"   ✅ Raw data saved to: {results_file}")
+    print(f"   SUCCESS: Raw data saved to: {results_file}")
         
     # Generate plots in benchmark directory
-    print("\\n🎨 Generating visualizations...")
+    print("\nGenerating visualizations...")
     combined_plot = plot_results(results, benchmark_dir)
-    print(f"   ✅ Combined analysis: {combined_plot}")
-    print(f"   ✅ Individual plots saved in: {benchmark_dir}")
+    print(f"   SUCCESS: Combined analysis: {combined_plot}")
+    print(f"   SUCCESS: Individual plots saved in: {benchmark_dir}")
     
     # Print summary
     print_summary(results)
     
-    print("\\n" + "="*60)
-    print("✅ BENCHMARKING COMPLETE!")
+    print("\n" + "="*60)
+    print("BENCHMARKING COMPLETE!")
     print("="*60)
-    print("📁 Generated Files:")
+    print("Generated Files:")
     print(f"   • {results_file} (Raw data)")
     print(f"   • {benchmark_dir}/benchmark_analysis.png (Combined analysis)")
     print(f"   • {benchmark_dir}/plot_performance.png (Performance comparison)")
     print(f"   • {benchmark_dir}/plot_speedup.png (Scalability analysis)")
     print(f"   • {benchmark_dir}/plot_rounds.png (Communication complexity)")
-    print("\\n🚀 Next Steps:")
+    print("\nNext Steps:")
     print("   • Run: python main.py --nodes 100 --animate")
     print("   • This will generate convergence charts and animations")
     print("="*60)

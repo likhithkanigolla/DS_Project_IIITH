@@ -19,8 +19,16 @@ def run_kmachine_boruvka(num_nodes: int, edges: List[Tuple[int, int, float]], ou
     
     print(f"[k-machine] Starting decentralized Borůvka on {size} ranks...")
     
-    # Improved load-balanced partitioning
-    local_nodes, local_edges = partition_graph(num_nodes, edges, rank, size)
+    # Create output directory (rank 0 only, but all ranks need to wait)
+    if rank == 0:
+        os.makedirs(out_dir, exist_ok=True)
+    comm.Barrier()  # Ensure directory exists before proceeding
+    
+    # Improved load-balanced partitioning with visualization
+    partition_viz_path = os.path.join(out_dir, 'partition_visualization.png') if rank == 0 else None
+    local_nodes, local_edges = partition_graph(num_nodes, edges, rank, size, 
+                                               save_visualization=True, 
+                                               output_path=partition_viz_path)
     
     # Initialize distributed DSU (each rank maintains full DSU for consistency)
     dsu = DSU()
@@ -137,6 +145,77 @@ def run_kmachine_boruvka(num_nodes: int, edges: List[Tuple[int, int, float]], ou
             f.write(f"Number of Edges: {len(unique)}\n")
             f.write(f"K-Machines Used: {size}\n")
             f.write(f"Input Size N: {num_nodes} (N/k = {num_nodes/size:.1f})\n")
+        
+        # Save MST visualization (if graph is not too large)
+        if num_nodes <= 50:
+            try:
+                import networkx as nx
+                import matplotlib.pyplot as plt
+                
+                mst_viz_path = os.path.join(out_dir, 'mst_visualization.png')
+                
+                # Build full graph
+                G = nx.Graph()
+                for u, v, w in edges:
+                    G.add_edge(u, v, weight=w)
+                
+                # Identify MST edges
+                mst_edge_set = {tuple(sorted((u, v))) for u, v, w in unique}
+                
+                # Create figure
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 9))
+                
+                # Use spring layout for both plots
+                pos = nx.spring_layout(G, seed=42, k=1/num_nodes**0.5, iterations=50)
+                
+                # LEFT PLOT: Original graph with all edges
+                ax1.set_title(f'Original Graph\n{num_nodes} nodes, {len(edges)} edges', 
+                             fontsize=14, fontweight='bold', pad=15)
+                nx.draw_networkx_nodes(G, pos, node_color='lightblue', 
+                                      node_size=500, alpha=0.9, linewidths=2, 
+                                      edgecolors='darkblue', ax=ax1)
+                nx.draw_networkx_edges(G, pos, alpha=0.3, width=1.5, edge_color='gray', ax=ax1)
+                nx.draw_networkx_labels(G, pos, font_size=9, font_weight='bold', ax=ax1)
+                ax1.axis('off')
+                
+                # RIGHT PLOT: MST only
+                ax2.set_title(f'Minimum Spanning Tree\n{len(unique)} edges, weight = {total_w:.2f}', 
+                             fontsize=14, fontweight='bold', pad=15)
+                
+                # Draw all nodes
+                nx.draw_networkx_nodes(G, pos, node_color='lightgreen', 
+                                      node_size=500, alpha=0.9, linewidths=2, 
+                                      edgecolors='darkgreen', ax=ax2)
+                
+                # Draw MST edges in red with thicker lines
+                mst_edges_list = [(u, v) for u, v, w in unique]
+                nx.draw_networkx_edges(G, pos, edgelist=mst_edges_list, 
+                                      edge_color='red', width=3, alpha=0.8, ax=ax2)
+                
+                # Draw node labels
+                nx.draw_networkx_labels(G, pos, font_size=9, font_weight='bold', ax=ax2)
+                
+                # Draw edge weights for MST edges
+                mst_edge_labels = {(u, v): f'{w:.1f}' for u, v, w in unique}
+                nx.draw_networkx_edge_labels(G, pos, mst_edge_labels, font_size=7,
+                                            bbox=dict(boxstyle='round,pad=0.2', 
+                                                     facecolor='yellow', alpha=0.7), ax=ax2)
+                ax2.axis('off')
+                
+                plt.suptitle(f'Distributed Borůvka MST ({size} machines, {iteration} iterations)', 
+                            fontsize=16, fontweight='bold', y=0.98)
+                plt.tight_layout()
+                
+                # Save the figure
+                plt.savefig(mst_viz_path, dpi=150, bbox_inches='tight', 
+                           facecolor='white', edgecolor='none')
+                plt.close()
+                
+                print(f"[k-machine] MST visualization saved to: {mst_viz_path}")
+            except Exception as e:
+                print(f"[k-machine] Warning: Could not save MST visualization: {e}")
+        elif num_nodes > 50:
+            print(f"[k-machine] Skipping MST visualization (n={num_nodes} > 50 nodes)")
         
         # Enhanced metrics file
         summary = metrics.summary()
